@@ -1,0 +1,9 @@
+{
+  "login": {
+    "title": "Welcome to Tape For You",
+    "hint": "Sign in to access the account area"
+  },
+  "invite": {
+    "title": "Welcome to Tape For You"
+  }
+}
