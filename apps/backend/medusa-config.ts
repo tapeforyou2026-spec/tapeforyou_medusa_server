@@ -1,6 +1,18 @@
 import { loadEnv, defineConfig } from '@medusajs/framework/utils'
+import { Client } from 'pg'
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
+
+;(async () => {
+  const client = new Client({ connectionString: process.env.DATABASE_URL })
+  try {
+    await client.connect()
+    console.log('✅ Supabase database is connected successfully')
+    await client.end()
+  } catch (err) {
+    console.error('❌ Supabase database connection failed:', (err as Error).message)
+  }
+})()
 
 module.exports = defineConfig({
   projectConfig: {
