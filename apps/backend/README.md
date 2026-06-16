@@ -299,8 +299,8 @@ npx medusa user --email admin@tapesforyou.com --password Admin123!
 
 ```powershell
 npm run dev
-```
 
+```
 **Expected output:**
 ```
 ✔ Server is ready on port: 9000
