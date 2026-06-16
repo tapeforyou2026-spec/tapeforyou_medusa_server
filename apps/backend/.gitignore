@@ -1,5 +1,6 @@
 /dist
 .env
+.env.local
 .DS_Store
 /uploads
 /node_modules
@@ -24,3 +25,6 @@ build
 !.yarn/versions
 
 .medusa
+
+# Local file uploads — use Cloudflare R2 in production
+/static/
