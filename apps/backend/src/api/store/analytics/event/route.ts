@@ -6,7 +6,7 @@ const eventSchema = z.object({
   event_type: z.string().min(1).max(100),
   product_id: z.string().optional(),
   session_id: z.string().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
 // POST /store/analytics/event
@@ -15,7 +15,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   if (!parsed.success) {
     return res.status(400).json({
       type: "invalid_data",
-      message: parsed.error.errors[0].message,
+      message: parsed.error.issues[0].message,
     })
   }
 

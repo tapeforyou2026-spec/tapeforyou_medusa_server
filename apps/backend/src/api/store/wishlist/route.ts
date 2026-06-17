@@ -25,7 +25,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   if (!parsed.success) {
     return res.status(400).json({
       type: "invalid_data",
-      message: parsed.error.errors[0].message,
+      message: parsed.error.issues[0].message,
     })
   }
 

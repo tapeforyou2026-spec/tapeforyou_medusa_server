@@ -36,7 +36,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   if (!parsed.success) {
     return res.status(400).json({
       type: "invalid_data",
-      message: parsed.error.errors[0].message,
+      message: parsed.error.issues[0].message,
     })
   }
 
@@ -103,7 +103,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     // Emit order.placed so subscribers (email, etc.) are triggered
     try {
       const eventBus = req.scope.resolve(Modules.EVENT_BUS)
-      await eventBus.emit("order.placed", { id: order.id })
+      await eventBus.emit({ name: "order.placed", data: { id: order.id } })
     } catch {
       // Event bus not critical — order is already created
     }

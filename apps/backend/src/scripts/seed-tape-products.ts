@@ -54,8 +54,8 @@ export default async function seedTapeProducts({
         ],
       },
     })
-    indiaRegion = regions[0]
-    logger.info(`India region created: ${indiaRegion.id}`)
+    indiaRegion = regions[0] as any
+    logger.info(`India region created: ${indiaRegion!.id}`)
   }
 
   // ── Get default sales channel ───────────────────────────────────────────────
@@ -127,21 +127,18 @@ export default async function seedTapeProducts({
               sku: "TPE-BOPP-48-65",
               options: { Size: "48mm x 65m" },
               prices: [inrPrice(12900)],
-              inventory_quantity: 500,
             },
             {
               title: "72mm x 65m",
               sku: "TPE-BOPP-72-65",
               options: { Size: "72mm x 65m" },
               prices: [inrPrice(18900)],
-              inventory_quantity: 200,
             },
             {
               title: "24mm x 65m",
               sku: "TPE-BOPP-24-65",
               options: { Size: "24mm x 65m" },
               prices: [inrPrice(8900)],
-              inventory_quantity: 300,
             },
           ],
           metadata: {
@@ -171,14 +168,12 @@ export default async function seedTapeProducts({
               sku: "TPE-MSK-24-20",
               options: { Size: "24mm x 20m" },
               prices: [inrPrice(8900)],
-              inventory_quantity: 300,
             },
             {
               title: "36mm x 20m",
               sku: "TPE-MSK-36-20",
               options: { Size: "36mm x 20m" },
               prices: [inrPrice(10900)],
-              inventory_quantity: 200,
             },
           ],
           metadata: {
@@ -208,14 +203,12 @@ export default async function seedTapeProducts({
               sku: "TPE-DS-18-5",
               options: { Size: "18mm x 5m" },
               prices: [inrPrice(14900)],
-              inventory_quantity: 250,
             },
             {
               title: "24mm x 10m",
               sku: "TPE-DS-24-10",
               options: { Size: "24mm x 10m" },
               prices: [inrPrice(22900)],
-              inventory_quantity: 150,
             },
           ],
           metadata: {
@@ -245,14 +238,12 @@ export default async function seedTapeProducts({
               sku: "TPE-FM-24-2",
               options: { Size: "24mm x 2m" },
               prices: [inrPrice(15900)],
-              inventory_quantity: 180,
             },
             {
               title: "48mm x 2m",
               sku: "TPE-FM-48-2",
               options: { Size: "48mm x 2m" },
               prices: [inrPrice(24900)],
-              inventory_quantity: 120,
             },
           ],
           metadata: {
@@ -282,7 +273,6 @@ export default async function seedTapeProducts({
               sku: "TPE-BRN-48-65",
               options: { Size: "48mm x 65m" },
               prices: [inrPrice(11900)],
-              inventory_quantity: 400,
             },
           ],
           metadata: {
@@ -312,14 +302,12 @@ export default async function seedTapeProducts({
               sku: "TPE-CELL-12-66",
               options: { Size: "12mm x 66m" },
               prices: [inrPrice(5900)],
-              inventory_quantity: 600,
             },
             {
               title: "18mm x 66m",
               sku: "TPE-CELL-18-66",
               options: { Size: "18mm x 66m" },
               prices: [inrPrice(7900)],
-              inventory_quantity: 400,
             },
           ],
           metadata: {
@@ -349,14 +337,12 @@ export default async function seedTapeProducts({
               sku: "TPE-DCT-48-10",
               options: { Size: "48mm x 10m" },
               prices: [inrPrice(29900)],
-              inventory_quantity: 120,
             },
             {
               title: "48mm x 25m",
               sku: "TPE-DCT-48-25",
               options: { Size: "48mm x 25m" },
               prices: [inrPrice(59900)],
-              inventory_quantity: 80,
             },
           ],
           metadata: {
