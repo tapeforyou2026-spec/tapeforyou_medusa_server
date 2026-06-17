@@ -281,16 +281,167 @@ Key API endpoints the frontend uses:
 
 ---
 
-## Bugs Fixed (2026-06-16)
+## Bugs Fixed (2026-06-16) — Architecture & Config
 
-| # | What | Why |
+| # | File | Error | Root Cause | Fix Applied |
+|---|---|---|---|---|
+| 1 | `medusa-config.ts` | Floating async IIFE caused deployment issues | `pg` Client connect/disconnect running as unresolved promise during config load | Removed entirely — Medusa's ORM reports DB errors internally |
+| 2 | Root `package.json` | `"private": false` | Monorepo root could be accidentally published to npm | Changed to `"private": true` |
+| 3 | Root `package.json` | `"build": "npm -r build"` failed | `-r` is not a valid npm flag | Changed to `"turbo build"` |
+| 4 | `apps/backend/.gitignore` | Uploaded images committed to git | `/static/` folder not gitignored | Added `/static/` and `.env.local` to `.gitignore` |
+| 5 | `apps/storefront/.env.local` | Wrong default region `dk` (Denmark) | Products are priced in INR for India | Changed `NEXT_PUBLIC_DEFAULT_REGION=dk` → `in` |
+| 6 | Repo root | Render build failed immediately | No `render.yaml` — Render had no build/start config | Created `render.yaml` with rootDir, build/start commands, Node 20 |
+| 7 | `apps/storefront/package.json` | Security risk | `pg` (PostgreSQL driver) was a storefront dependency — frontend must never touch DB directly | Removed `pg` and `@types/pg` via `npm uninstall` |
+| 8 | `apps/storefront/next.config.js` | Product images blocked by Next.js | `*.supabase.co`, `placehold.co`, `media.tapeforyou.com` not in `remotePatterns` | Added all three domains |
+| 9 | `apps/backend/.env.example` | Incomplete template | Only had placeholder values, no production examples or comments | Fully rewritten with all vars, production CORS examples, secret generation instructions |
+| 10 | `apps/backend/.npmrc` | Missing from standalone repo | Root monorepo `.npmrc` (`auto-install-peers=true`) not included in `apps/backend` push | Created `.npmrc` in `apps/backend` with `legacy-peer-deps=true` and `auto-install-peers=true` |
+| 11 | `render.yaml` build command | Peer dependency install failures on Render | Medusa v2 has many peer deps that need `--legacy-peer-deps` | Updated build command to `npm install --legacy-peer-deps && npm run build` |
+
+---
+
+## Build Errors Fixed (2026-06-17) — TypeScript Compile Errors
+
+These errors caused `npm run build` (`medusa build`) to fail with exit code 1.
+All fixed on 2026-06-17. Build now passes cleanly.
+
+### Error 1 — Import Attributes Not Supported with `module: Node16`
+
+| | Detail |
+|---|---|
+| **File** | `src/admin/i18n/index.ts:1` |
+| **Error** | `TS2823: Import attributes are only supported when '--module' is set to 'esnext', 'node18', 'node20', 'nodenext', or 'preserve'` |
+| **Root Cause** | `import en from "./json/en.json" with { type: "json" }` uses ES2025 import attribute syntax. `tsconfig.json` has `"module": "Node16"` which doesn't support this syntax. |
+| **Fix** | Removed the `with { type: "json" }` attribute. Plain `import en from "./json/en.json"` works because `resolveJsonModule: true` is already set in `tsconfig.json`. |
+
+```typescript
+// Before (broken)
+import en from "./json/en.json" with { type: "json" }
+
+// After (fixed)
+import en from "./json/en.json"
+```
+
+---
+
+### Error 2 — Zod v4 Breaking Change: `z.record()` Requires Two Arguments
+
+| | Detail |
+|---|---|
+| **File** | `src/api/store/analytics/event/route.ts:9` |
+| **Error** | `TS2554: Expected 2-3 arguments, but got 1` |
+| **Root Cause** | `package.json` has `"zod": "4.2.0"`. Zod v4 changed `z.record()` to require explicit key AND value types. Zod v3 allowed `z.record(valueType)` with implicit string key. |
+| **Fix** | Added explicit string key type as first argument. |
+
+```typescript
+// Before (Zod v3 API — broken in v4)
+metadata: z.record(z.unknown()).optional()
+
+// After (Zod v4 API — fixed)
+metadata: z.record(z.string(), z.unknown()).optional()
+```
+
+---
+
+### Error 3 — Zod v4 Breaking Change: `.errors` Renamed to `.issues`
+
+| | Detail |
+|---|---|
+| **Files** | `analytics/event/route.ts`, `checkout/submit/route.ts`, `contact/route.ts`, `coupons/validate/route.ts`, `reviews/route.ts`, `wishlist/route.ts` |
+| **Error** | `TS2339: Property 'errors' does not exist on type 'ZodError<...>'` |
+| **Root Cause** | Zod v4 renamed `ZodError.errors` to `ZodError.issues`. All 6 route files used the old v3 API to extract the first validation error message. |
+| **Fix** | Replaced `.errors[0].message` with `.issues[0].message` in all 6 files. |
+
+```typescript
+// Before (Zod v3 API — broken in v4)
+message: parsed.error.errors[0].message
+
+// After (Zod v4 API — fixed)
+message: parsed.error.issues[0].message
+```
+
+Files changed:
+- `src/api/store/analytics/event/route.ts`
+- `src/api/store/checkout/submit/route.ts`
+- `src/api/store/contact/route.ts`
+- `src/api/store/coupons/validate/route.ts`
+- `src/api/store/reviews/route.ts`
+- `src/api/store/wishlist/route.ts`
+
+---
+
+### Error 4 — Event Bus `emit()` Wrong Signature
+
+| | Detail |
+|---|---|
+| **File** | `src/api/store/checkout/submit/route.ts:106` |
+| **Error** | `TS2345: Argument of type 'string' is not assignable to parameter of type 'Message<unknown> \| Message<unknown>[]'` |
+| **Root Cause** | Old Medusa v1 API used `eventBus.emit(eventName: string, data: object)`. Medusa v2's `IEventBusModuleService.emit()` takes a single `Message` object (or array) with `{ name, data }` shape — confirmed from `@medusajs/types/dist/event-bus/event-bus-module.d.ts`. |
+| **Fix** | Changed to the Medusa v2 `Message` object format. |
+
+```typescript
+// Before (old API — broken)
+await eventBus.emit("order.placed", { id: order.id })
+
+// After (Medusa v2 Message API — fixed)
+await eventBus.emit({ name: "order.placed", data: { id: order.id } })
+```
+
+---
+
+### Error 5 — `inventory_quantity` Removed from `CreateProductVariantWorkflowInputDTO`
+
+| | Detail |
+|---|---|
+| **File** | `src/scripts/seed-tape-products.ts` — 14 occurrences across all product variants |
+| **Error** | `TS2353: Object literal may only specify known properties, and 'inventory_quantity' does not exist in type 'CreateProductVariantWorkflowInputDTO'` |
+| **Root Cause** | Medusa v2 (2.15.2) removed `inventory_quantity` from the product variant creation workflow DTO. Inventory levels are now managed separately via `createInventoryLevelsWorkflow`. The seed script was written against an older API. |
+| **Fix** | Removed all 14 `inventory_quantity` fields from every product variant in the seed script. Inventory was already seeded correctly by `initial-data-seed.ts` using `createInventoryLevelsWorkflow`. |
+
+```typescript
+// Before (broken — field no longer exists in DTO)
+variants: [{
+  title: "48mm x 65m",
+  sku: "TPE-BOPP-48-65",
+  options: { Size: "48mm x 65m" },
+  prices: [inrPrice(12900)],
+  inventory_quantity: 500,   // ← removed
+}]
+
+// After (fixed)
+variants: [{
+  title: "48mm x 65m",
+  sku: "TPE-BOPP-48-65",
+  options: { Size: "48mm x 65m" },
+  prices: [inrPrice(12900)],
+}]
+```
+
+---
+
+### Error 6 — `RegionDTO` Type Mismatch in Seed Script
+
+| | Detail |
+|---|---|
+| **File** | `src/scripts/seed-tape-products.ts:57-58` |
+| **Error** | `TS2739: Type 'RegionDTO' is missing properties from type 'Region': deleted_at, carts, orders, payment_provider_link` and `TS18048: 'indiaRegion' is possibly 'undefined'` |
+| **Root Cause** | `createRegionsWorkflow` returns `RegionDTO[]` but the variable `indiaRegion` was typed as `Region` (the full ORM entity) via inference from `existingRegions.find()`. TypeScript couldn't reconcile the two types. |
+| **Fix** | Cast workflow result to `any` to bypass the DTO/entity mismatch, and added non-null assertion for the logger line. |
+
+```typescript
+// Before (type error)
+indiaRegion = regions[0]
+logger.info(`India region created: ${indiaRegion.id}`)
+
+// After (fixed)
+indiaRegion = regions[0] as any
+logger.info(`India region created: ${indiaRegion!.id}`)
+```
+
+---
+
+## Build Status
+
+| Date | Result | Errors |
 |---|---|---|
-| 1 | Removed async IIFE DB check from `medusa-config.ts` | Floating promise caused deployment issues; Medusa ORM handles this internally |
-| 2 | `"private": false` → `true` in root `package.json` | Prevented accidental npm publish |
-| 3 | `"build": "npm -r build"` → `"turbo build"` | `-r` is not a valid npm flag |
-| 4 | Added `/static/` to `.gitignore` | Binary uploaded images should not be in git |
-| 5 | `NEXT_PUBLIC_DEFAULT_REGION=dk` → `in` | Products are priced in INR for India |
-| 6 | Created `render.yaml` | Render had no config — could not deploy |
-| 7 | Removed `pg` from storefront `package.json` | Frontend must not connect directly to Postgres |
-| 8 | Added image domains to `next.config.js` | Supabase/R2/placeholder images were blocked |
-| 9 | Rewrote `.env.example` | Added all variables with production examples |
+| 2026-06-16 | ❌ Failed | 3 categories, 20+ TypeScript errors |
+| 2026-06-17 | ✅ Passed | 0 errors — `Backend build completed successfully (8.80s)` |

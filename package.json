@@ -1,13 +1,13 @@
 {
   "name": "tapesforyou-backend",
-  "private": false,
+  "private": true,
   "packageManager": "npm@10.9.2",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "dev": "npm -r dev",
-    "build": "npm -r build",
+    "build": "turbo build",
     "start": "turbo start",
     "lint": "turbo lint",
     "test": "turbo test",
