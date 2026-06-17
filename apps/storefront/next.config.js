@@ -39,6 +39,21 @@ const nextConfig = {
         protocol: "https",
         hostname: "*.s3.amazonaws.com",
       },
+      // Supabase storage
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+      },
+      // Cloudflare R2 public bucket
+      {
+        protocol: "https",
+        hostname: "media.tapeforyou.com",
+      },
+      // Placeholder images used in seed
+      {
+        protocol: "https",
+        hostname: "placehold.co",
+      },
       ...(S3_HOSTNAME && S3_PATHNAME
         ? [
             {
