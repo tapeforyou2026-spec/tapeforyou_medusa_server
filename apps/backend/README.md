@@ -296,7 +296,7 @@ npx medusa user --email admin@tapesforyou.com --password Admin123!
 ```
 
 ### Step 5: Start Development Server
-22
+
 ```powershell
 npm run dev
 
